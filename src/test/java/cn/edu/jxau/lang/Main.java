@@ -3,6 +3,10 @@ package cn.edu.jxau.lang;
 import org.apache.commons.beanutils.LazyDynaMap;
 import org.junit.Test;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Desc:
  * ------------------------------------
@@ -15,9 +19,10 @@ public class Main {
     @Test
     public void test01() {
 
-        LazyDynaMap dynaBean1 = new LazyDynaMap();
-        dynaBean1.set("address", 0, "address1");
-        dynaBean1.set("address", 1, "address2");
-        System.out.println(dynaBean1.get("address").getClass());
+        Map<String,String> map = new HashMap<>();
+        map.put("a","1");
+        Collection<String> values = map.values();
+        map.put("b","2");
+        System.out.println(values);
     }
 }
