@@ -9,4 +9,6 @@ package cn.edu.jxau.beanutils;
  */
 public class ConvertUtilsBean2 {
 
+
+
 }
