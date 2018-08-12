@@ -8,4 +8,5 @@ package cn.edu.jxau.beanutils;
  * Time:下午5:09
  */
 public class ConvertUtilsBean2 {
+
 }

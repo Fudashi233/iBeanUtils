@@ -8,4 +8,5 @@ package cn.edu.jxau.beanutils;
  * Time:下午4:59
  */
 public class BeanUtils {
+
 }
