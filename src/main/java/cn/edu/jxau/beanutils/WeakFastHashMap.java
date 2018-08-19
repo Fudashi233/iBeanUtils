@@ -13,7 +13,7 @@ import java.util.WeakHashMap;
  * Date:2018/8/12
  * Time:下午5:43
  */
-public class WeakFastHashMap<K, V> implements Cloneable {
+public class WeakFastHashMap<K, V> {
 
     private Map<K, V> weakHashMap;
 
