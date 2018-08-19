@@ -17,10 +17,7 @@ import java.lang.annotation.Native;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Desc:
@@ -34,24 +31,26 @@ public class Main {
     @Test
     public void test01() throws InvocationTargetException, IllegalAccessException {
 
+        Optional<Integer> opt = Optional.ofNullable(2);
+        Optional<Integer> o = opt.map(i -> i + 1);
+        System.out.println(o);
 
-
-        Student student = new Student();
-        ConvertUtils.register(new Converter() {
-
-            public Object convert(Class type, Object value) {
-                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-                try {
-                    return simpleDateFormat.parse(value.toString());
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
-                return null;
-            }
-        }, Date.class);
-
-        BeanUtils.setProperty(student, "birthday", "1995-09-20");
-        System.out.println(student);
+        //Student student = new Student();
+        //ConvertUtils.register(new Converter() {
+        //
+        //    public Object convert(Class type, Object value) {
+        //        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        //        try {
+        //            return simpleDateFormat.parse(value.toString());
+        //        } catch (ParseException e) {
+        //            e.printStackTrace();
+        //        }
+        //        return null;
+        //    }
+        //}, Date.class);
+        //
+        //BeanUtils.setProperty(student, "birthday", "1995-09-20");
+        //System.out.println(student);
     }
 
 
