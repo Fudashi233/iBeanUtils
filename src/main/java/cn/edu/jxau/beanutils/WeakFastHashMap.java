@@ -252,18 +252,6 @@ public class WeakFastHashMap<K, V> implements Cloneable {
         }
     }
 
-    @Override
-    public Object clone() {
-
-        if (isFast()) {
-            WeakFastHashMap<K, V> weakHashMap = new WeakFastHashMap<>(this.weakHashMap);
-            weakHashMap.setFast(isFast());
-            return weakHashMap;
-        } else {
-            return syncClone();
-        }
-    }
-
     private Object syncClone() {
 
         synchronized (weakHashMap) {
