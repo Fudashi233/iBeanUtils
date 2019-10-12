@@ -4,6 +4,7 @@ import lombok.Data;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Desc:
@@ -15,10 +16,11 @@ import java.util.List;
 @Data
 public class Student {
 
-    private String username;
-    private String password;
-    private Date birthday;
+    private Integer classId;
     private Integer age;
-    private int id;
-    private List<String> tagList;
+    private String name;
+    private Integer id;
+    private Date birthday;
+    private Integer[] integerArr;
+    private Map<String,Integer> integerMap;
 }

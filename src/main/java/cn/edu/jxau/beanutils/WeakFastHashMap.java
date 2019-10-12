@@ -1,277 +1,256 @@
 package cn.edu.jxau.beanutils;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.WeakHashMap;
 
 /**
- * Desc: 自定义一个Map，当在fast模式下，本质就是HashMap，
- * 当在非fast模式下，是一个线程安全的HashMap。
- * 话说为啥不适用ConcurrentHashMap?
+ * Desc:
  * ------------------------------------
  * Author:fulei04@meituan.com
- * Date:2018/8/12
- * Time:下午5:43
+ * Date:2019/9/3
+ * Time:下午8:28
  */
-public class WeakFastHashMap<K, V> {
+public class WeakFastHashMap<K, V> extends HashMap<K, V> {
 
-    private Map<K, V> weakHashMap;
+    private Map<K, V> map = null;
 
-    private boolean fast;
+    private boolean fastMode = false;
+
+    // contractors
+    // ----------------------------------------------------------
 
     public WeakFastHashMap() {
-        this.weakHashMap = createMap();
+        this.map = createMap();
+    }
+
+    public WeakFastHashMap(int capacity) {
+        this.map = createMap(capacity);
+    }
+
+    public WeakFastHashMap(int capacity, float factor) {
+        this.map = createMap(capacity, factor);
     }
 
     public WeakFastHashMap(Map<K, V> map) {
-        this.weakHashMap = createMap(map);
+        this.map = createMap(map);
     }
 
-    public boolean isFast() {
-        return this.fast;
+    // instance method
+    // ----------------------------------------------------------
+
+    public boolean isFastMode() {
+        return fastMode;
     }
 
-    public void setFast(boolean fast) {
-        this.fast = fast;
+    public void setFastMode(boolean fastMode) {
+        this.fastMode = fastMode;
     }
 
-    public V get(K key) {
-        if (isFast()) {
-            return weakHashMap.get(key);
+    @Override
+    public V get(Object key) {
+
+        if (fastMode) {
+            return map.get(key);
         } else {
-            return syncGet(key);
+            synchronized (this) {
+                return map.get(key);
+            }
         }
     }
 
-    private V syncGet(K key) {
-        synchronized (weakHashMap) {
-            return weakHashMap.get(key);
+    @Override
+    public int size() {
+
+        if (fastMode) {
+            return map.size();
+        } else {
+            synchronized (this) {
+                return map.size();
+            }
         }
     }
 
+    @Override
     public boolean isEmpty() {
-        if (isFast()) {
-            return weakHashMap.isEmpty();
+
+        if (fastMode) {
+            return map.isEmpty();
         } else {
-            return syncIsEmpty();
+            synchronized (this) {
+                return map.isEmpty();
+            }
         }
     }
 
-    private boolean syncIsEmpty() {
-        synchronized (weakHashMap) {
-            return weakHashMap.isEmpty();
-        }
-    }
+    @Override
+    public boolean containsKey(Object key) {
 
-    public boolean containsKey(K key) {
-        if (isFast()) {
-            return weakHashMap.containsKey(key);
+        if (fastMode) {
+            return map.containsKey(key);
         } else {
-            return syncContainsKey(key);
+            synchronized (this) {
+                return map.containsKey(key);
+            }
         }
     }
 
-    private boolean syncContainsKey(K key) {
-        synchronized (weakHashMap) {
-            return weakHashMap.containsKey(key);
-        }
-    }
+    @Override
+    public boolean containsValue(Object value) {
 
-    public boolean containsValue(K key) {
-        if (isFast()) {
-            return weakHashMap.containsValue(key);
+        if (fastMode) {
+            return map.containsValue(value);
         } else {
-            return syncContainsValue(key);
+            synchronized (this) {
+                return map.containsKey(value);
+            }
         }
     }
 
-    private boolean syncContainsValue(K key) {
-
-        synchronized (weakHashMap) {
-            return weakHashMap.containsValue(key);
-        }
-    }
-
+    @Override
     public V put(K key, V value) {
 
-        V result = null;
-        if (isFast()) { //快模式，不保证一致性，读线程不受写线程同步影响
+        if (fastMode) {
             synchronized (this) {
-                Map<K, V> cloneMap = cloneMap();
-                result = cloneMap.put(key, value);
-                this.weakHashMap = cloneMap;
+                Map<K, V> tempMap = createMap(this.map);
+                V result = tempMap.put(key, value);
+                this.map = tempMap;
+                return result;
             }
         } else {
-            result = syncPut(key, value);
-        }
-        return result;
-    }
-
-    private V syncPut(K key, V value) {
-
-        synchronized (weakHashMap) {
-            return weakHashMap.put(key, value);
-        }
-    }
-
-    public void putAll(Map<K, V> map) {
-
-        if (isFast()) {
             synchronized (this) {
-                Map<K, V> cloneMap = cloneMap();
-                cloneMap.putAll(map);
-                this.weakHashMap = cloneMap;
+                return map.put(key, value);
             }
+        }
+    }
+
+    @Override
+    public void putAll(Map<? extends K, ? extends V> in) {
+
+        if (fastMode) {
+            Map<K, V> tempMap = createMap(this.map);
+            tempMap.putAll(in);
+            this.map = tempMap;
         } else {
-            syncPutAll(map);
-        }
-    }
-
-    public void syncPutAll(Map<K, V> map) {
-
-        synchronized (weakHashMap) {
-            map.putAll(map);
-        }
-    }
-
-    public V remove(K key) {
-
-        V result = null;
-        if (isFast()) {
             synchronized (this) {
-                Map<K, V> cloneMap = cloneMap();
-                result = cloneMap.remove(key);
-                this.weakHashMap = cloneMap;
+                this.map.putAll(in);
             }
+        }
+    }
+
+    @Override
+    public V remove(Object key) {
+
+        if (fastMode) {
+            Map<K, V> tempMap = createMap(map);
+            V result = tempMap.remove(key);
+            this.map = tempMap;
+            return result;
         } else {
-            result = syncRemove(key);
-        }
-        return result;
-    }
-
-    private V syncRemove(K key) {
-        synchronized (weakHashMap) {
-            return weakHashMap.remove(key);
+            synchronized (this) {
+                return map.remove(key);
+            }
         }
     }
 
+    @Override
     public void clear() {
 
-        if (isFast()) {
-            synchronized (this) {
-                this.weakHashMap = createMap();
-            }
+        if (fastMode) {
+            this.map = createMap();
         } else {
-            syncClear();
-        }
-    }
-
-    private void syncClear() {
-        synchronized (weakHashMap) {
-            weakHashMap.clear();
+            synchronized (this) {
+                map.clear();
+            }
         }
     }
 
     @Override
     public boolean equals(Object obj) {
 
-        // 自反性校验 //
-        if (obj == this) {
-            return true;
-        }
-
-        // 类型校验，非空校验 //
-        if (!(obj instanceof WeakFastHashMap)) {
+        if (!(obj instanceof Map)) {
             return false;
         }
-        Map<K, V> map = (Map<K, V>) obj;
-        if (isFast()) {
-            if (map.size() != weakHashMap.size()) {
-                return false;
-            }
-            for (Map.Entry<K, V> entry : map.entrySet()) {
-                K key = entry.getKey();
-                V value = entry.getValue();
-                if (value == null) {
-                    if (map.get(key) != null || !map.containsKey(key)) {
-                        return false;
-                    }
-                } else {
-                    if (Objects.equals(value, map.get(key))) {
-                        return false;
-                    }
-                }
-            }
+        if (Objects.equals(this, obj)) {
             return true;
-        } else {
-            return syncEquals(map);
         }
-
+        Map<K, V> in = (Map<K, V>) obj;
+        if (fastMode) {
+            return doEquals(in);
+        } else {
+            synchronized (this) {
+                return doEquals(in);
+            }
+        }
     }
 
-    private boolean syncEquals(Map<K, V> map) {
+    private synchronized boolean doEquals(Map<K, V> in) {
 
-        synchronized (weakHashMap) {
-            if (map.size() != weakHashMap.size()) {
-                return false;
-            }
-            for (Map.Entry<K, V> entry : map.entrySet()) {
-                K key = entry.getKey();
-                V value = entry.getValue();
-                if (value == null) {
-                    if (map.get(key) != null || !map.containsKey(key)) {
-                        return false;
-                    }
-                } else {
-                    if (Objects.equals(value, map.get(key))) {
-                        return false;
-                    }
+        if (in.size() != map.size()) {
+            return false;
+        }
+        for (Map.Entry<K, V> entry : in.entrySet()) {
+            K key = entry.getKey();
+            V value = entry.getValue();
+            if (Objects.isNull(value)) {
+                if (!(Objects.equals(map.get(key), null) && map.containsValue(key))) {
+                    return false;
+                }
+            } else {
+                if (!Objects.equals(value, map.get(key))) {
+                    return false;
                 }
             }
-            return true;
         }
+        return true;
     }
 
     public int hashCode() {
 
-        if (isFast()) {
-            return weakHashMap.entrySet().stream()
-                    .map(Map.Entry::hashCode)
-                    .reduce((h1, h2) -> h1 + h2).orElse(0);
+        int h = 0;
+        if (fastMode) {
+            for (Map.Entry<K, V> entry : map.entrySet()) {
+                h += entry.hashCode();
+            }
         } else {
-            return syncHashCode();
+            synchronized (this) {
+                for (Map.Entry<K, V> entry : map.entrySet()) {
+                    h += entry.hashCode();
+                }
+            }
         }
+        return h;
     }
 
-    private int syncHashCode() {
+    @Override
+    public Object clone() {
 
-        synchronized (this.weakHashMap) {
-            return weakHashMap.entrySet().stream()
-                    .map(Map.Entry::hashCode)
-                    .reduce((h1, h2) -> h1 + h2).orElse(0);
+        WeakFastHashMap<K, V> results = null;
+        if (fastMode) {
+            results = new WeakFastHashMap<>(map);
+        } else {
+            synchronized (this) {
+                results = new WeakFastHashMap<>(map);
+            }
         }
+        results.setFastMode(fastMode);
+        return (results);
     }
 
-    private Object syncClone() {
-
-        synchronized (weakHashMap) {
-            WeakFastHashMap<K, V> weakHashMap = new WeakFastHashMap<>(this.weakHashMap);
-            weakHashMap.setFast(isFast());
-            return weakHashMap;
-        }
-    }
-
-
-    // create WeakHashMap -----------------------
     private Map<K, V> createMap() {
         return new WeakHashMap<K, V>();
     }
 
-    private Map<K, V> createMap(Map<K, V> map) {
-        return new WeakHashMap<K, V>(map);
+    private Map<K, V> createMap(int capacity) {
+        return new WeakHashMap<K, V>(capacity);
     }
 
-    private Map<K, V> cloneMap() {
-        return createMap(this.weakHashMap);
+    private Map<K, V> createMap(int capacity, float factor) {
+        return new WeakHashMap<K, V>(capacity, factor);
+    }
+
+    private Map<K, V> createMap(Map<K, V> map) {
+        return new WeakHashMap<K, V>(map);
     }
 }
